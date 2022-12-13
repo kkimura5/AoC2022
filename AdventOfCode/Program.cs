@@ -35,6 +35,11 @@ namespace AdventOfCode
             var lines = File.ReadAllLines(".\\Input\\Day13.txt").ToList();
             long total1 = 0;
             var index = 1;
+            var allPacketItems = new List<PacketItem>();
+            var divider1 = new PacketItem("[[2]]");
+            var divider2 = new PacketItem("[[6]]");
+            allPacketItems.Add(divider1);
+            allPacketItems.Add(divider2);
             while (lines.Any())
             {
                 var packets = lines.Take(2).ToList();
@@ -49,11 +54,18 @@ namespace AdventOfCode
 
                 lines = lines.Skip(3).ToList();
                 index++;
+
+                allPacketItems.Add(left);
+                allPacketItems.Add(right);
             }
 
+            var sortedPackets = allPacketItems.OrderBy(x => x, new PacketItemComparer()).ToList();
+
+            var index1 = sortedPackets.FindIndex(x => x == divider1) + 1;
+            var index2 = sortedPackets.FindIndex(x => x == divider2) + 1;
 
             Console.WriteLine($"Day 13 part 1: {total1}");
-            Console.WriteLine($"Day 13: {total1}");
+            Console.WriteLine($"Day 13 part 2: {index1 * index2}");
         }
 
         private static void RunDay12()

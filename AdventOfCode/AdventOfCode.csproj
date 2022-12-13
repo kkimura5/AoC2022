@@ -48,7 +48,8 @@
     <Compile Include="Knot.cs" />
     <Compile Include="Monkey.cs" />
     <Compile Include="MonkeyItem.cs" />
-    <Compile Include="PacketList.cs" />
+    <Compile Include="PacketItemComparer.cs" />
+    <Compile Include="PacketItem.cs" />
     <Compile Include="Path.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace AdventOfCode
 {
-    public class PacketItem
+    public class PacketItem 
     {
         private string line;
         public PacketItem(string line)
@@ -117,6 +117,6 @@ namespace AdventOfCode
             {
                 return $"List: Item count {Items.Count}; {line}";
             }
-        }
+        }        
     }
 }
