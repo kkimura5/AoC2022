@@ -26,7 +26,34 @@ namespace AdventOfCode
             RunDay10();
             //RunDay11();
             RunDay12();
+            RunDay13();
             Console.ReadKey();
+        }
+
+        private static void RunDay13()
+        {
+            var lines = File.ReadAllLines(".\\Input\\Day13.txt").ToList();
+            long total1 = 0;
+            var index = 1;
+            while (lines.Any())
+            {
+                var packets = lines.Take(2).ToList();
+
+                var left = new PacketItem(packets[0]);
+                var right = new PacketItem(packets[1]);
+
+                if (left.IsInCorrectOrder(right) == true)
+                {
+                    total1 += index;
+                }
+
+                lines = lines.Skip(3).ToList();
+                index++;
+            }
+
+
+            Console.WriteLine($"Day 13 part 1: {total1}");
+            Console.WriteLine($"Day 13: {total1}");
         }
 
         private static void RunDay12()
