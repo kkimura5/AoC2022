@@ -60,7 +60,6 @@ namespace AdventOfCode
             }
 
             var sortedPackets = allPacketItems.OrderBy(x => x, new PacketItemComparer()).ToList();
-
             var index1 = sortedPackets.FindIndex(x => x == divider1) + 1;
             var index2 = sortedPackets.FindIndex(x => x == divider2) + 1;
 

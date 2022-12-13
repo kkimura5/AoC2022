@@ -27,6 +27,7 @@ namespace AdventOfCode
             string innerText = line.Substring(1, line.Length - 2);
             var matches = Regex.Matches(innerText, ",");
             var previousMatchIndex = 0;
+            string lastItemText = string.Empty;
             foreach (Match match in matches)
             {
                 var itemText = innerText.Substring(previousMatchIndex, match.Index - previousMatchIndex);
@@ -36,14 +37,16 @@ namespace AdventOfCode
                     previousMatchIndex = match.Index + 1;
                 }
 
-                if (!match.NextMatch().Success)
+                var textRemaining = innerText.Substring(match.Index + 1);
+                if (textRemaining.Count(x => x == '[') == textRemaining.Count(x => x == ']'))
                 {
-                    itemText = innerText.Substring(match.Index + 1);
-                    if (itemText.Count(x => x == '[') == itemText.Count(x => x == ']'))
-                    {
-                        Items.Add(new PacketItem(itemText));
-                    }
+                    lastItemText = textRemaining;
                 }
+            }
+
+            if (!string.IsNullOrEmpty(lastItemText))
+            {
+                Items.Add(new PacketItem(lastItemText));
             }
 
             if (Items.Count == 0 && !string.IsNullOrEmpty(innerText))
