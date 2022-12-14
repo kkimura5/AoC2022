@@ -27,7 +27,51 @@ namespace AdventOfCode
             //RunDay11();
             RunDay12();
             RunDay13();
+            RunDay14();
             Console.ReadKey();
+        }
+
+        private static void RunDay14()
+        {
+            var textLines = File.ReadAllLines(".\\Input\\Day14.txt").ToList();
+            var lines = new List<Line>();
+            for (int i = 0; i < textLines.Count; i++)
+            {
+                var textLine = textLines[i];
+                var pattern = @"(?<x>\d+),(?<y>\d+)";
+                var matches = Regex.Matches(textLine, pattern);
+                Point currentPoint = new Point(0, 0), previousPoint = new Point(0,0);
+                
+                foreach (Match match in matches)
+                {
+                    currentPoint = new Point(int.Parse(match.Groups["x"].Value), int.Parse(match.Groups["y"].Value));
+
+                    if (previousPoint != new Point(0, 0))
+                    {
+                        var line = new Line(previousPoint, currentPoint);
+                        lines.Add(line);
+                    }
+
+                    previousPoint = currentPoint;
+                }
+            }
+
+            var startingPoint = new Point(500, 0);
+            var sandcastle = new SandCastle(lines);
+            while (!sandcastle.IsDone)
+            {
+                sandcastle.DropSand(startingPoint);
+            }
+            Console.WriteLine($"Day 14 part 1: {sandcastle.SandCount}");
+
+            sandcastle = new SandCastle(lines);
+            sandcastle.IsUsingFloor = true;
+            while (!sandcastle.IsDone)
+            {
+                sandcastle.DropSand(startingPoint);
+            }
+
+            Console.WriteLine($"Day 14 part 2: {sandcastle.SandCount}");
         }
 
         private static void RunDay13()
