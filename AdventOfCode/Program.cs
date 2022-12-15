@@ -43,7 +43,7 @@ namespace AdventOfCode
                 sensors.Add(sensor);
             }
 
-            var xranges = GetXRangesWithNoSensor(sensors, 2000000);
+            var xranges = GetXRangesWithNoBeacon(sensors, 2000000);
             var total1 = xranges.Sum(x => x.Item2 - x.Item1 + 1);
             total1 -= sensors.Select(x => x.ClosestBeacon).Where(p => p.Y == 2000000 && xranges.Any(r => ((long)p.X).IsBetween(r.Item1, r.Item2))).Distinct().Count();
             Console.WriteLine($"Day 15 part 1: {total1}");
@@ -55,7 +55,7 @@ namespace AdventOfCode
             long total2 = 0;
             for (int y = 0; y <= 4000000; y++)
             {
-                var xranges = GetXRangesWithNoSensor(sensors, y);
+                var xranges = GetXRangesWithNoBeacon(sensors, y);
                 if (xranges.Count > 1)
                 {
                     bool found = false;
@@ -88,7 +88,7 @@ namespace AdventOfCode
             }
         }
 
-        private static List<Tuple<long, long>> GetXRangesWithNoSensor(List<Sensor> sensors, int row)
+        private static List<Tuple<long, long>> GetXRangesWithNoBeacon(List<Sensor> sensors, int row)
         {
             var ranges = new List<Tuple<long, long>>();
             foreach (var sensor in sensors)
