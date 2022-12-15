@@ -13,5 +13,11 @@ public static    class Helpers
             var bounds = new List<int>() { bound1, bound2 };
             return x <= bounds.Max() && x >= bounds.Min();
         }
+
+        public static bool IsBetween(this long x, long bound1, long bound2)
+        {
+            var bounds = new List<long>() { bound1, bound2 };
+            return x <= bounds.Max() && x >= bounds.Min();
+        }
     }
 }

@@ -28,7 +28,112 @@ namespace AdventOfCode
             RunDay12();
             RunDay13();
             RunDay14();
+            RunDay15();
             Console.ReadKey();
+        }
+
+        private static void RunDay15()
+        {
+            var lines = File.ReadAllLines(".\\Input\\Day15.txt").ToList();
+            var sensors = new List<Sensor>();
+            for (int i = 0; i < lines.Count; i++)
+            {
+                var line = lines[i];
+                var sensor = new Sensor(line);
+                sensors.Add(sensor);
+            }
+
+            var xranges = GetXRangesWithNoSensor(sensors, 2000000);
+            var total1 = xranges.Sum(x => x.Item2 - x.Item1 + 1);
+            total1 -= sensors.Select(x => x.ClosestBeacon).Where(p => p.Y == 2000000 && xranges.Any(r => ((long)p.X).IsBetween(r.Item1, r.Item2))).Distinct().Count();
+            Console.WriteLine($"Day 15 part 1: {total1}");
+            //RunDay15Part2(sensors);
+        }
+
+        private static void RunDay15Part2(List<Sensor> sensors)
+        {
+            long total2 = 0;
+            for (int y = 0; y <= 4000000; y++)
+            {
+                var xranges = GetXRangesWithNoSensor(sensors, y);
+                if (xranges.Count > 1)
+                {
+                    bool found = false;
+                    foreach (var range1 in xranges)
+                    {
+                        var possibleRanges = xranges.Where(range2 => (range1.Item1 - range2.Item2) == 2
+                                                || (range2.Item1 - range1.Item2) == 2);
+                        foreach (var possibleRange in possibleRanges)
+                        {
+                            if (possibleRange.Item1.IsBetween(0, 4000000))
+                            {
+                                total2 = (possibleRange.Item1 - 1) * 4000000 + y;
+                                Console.WriteLine($"Day 15 part 2: {total2}");
+                                found = true;
+                            }
+                            else if (possibleRange.Item2.IsBetween(0, 4000000))
+                            {
+                                total2 = (possibleRange.Item2 + 1) * 4000000 + y;
+                                Console.WriteLine($"Day 15 part 2: {total2}");
+                                found = true;
+                            }
+                        }
+                    }
+
+                    if (found)
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+
+        private static List<Tuple<long, long>> GetXRangesWithNoSensor(List<Sensor> sensors, int row)
+        {
+            var ranges = new List<Tuple<long, long>>();
+            foreach (var sensor in sensors)
+            {
+                var newRange = sensor.GetXRangeWithNoBeacon(row);
+                if (newRange.Item1 == 0 && newRange.Item2 == 0)
+                {
+                    continue;
+                }
+
+                bool isRestarting;
+                do
+                {
+                    isRestarting = false;
+                    var allRanges = ranges.ToList();
+                    foreach (var range in allRanges)
+                    {
+                        if (CheckForOverlap(range, newRange))
+                        {
+                            newRange = CombineRanges(range, newRange);
+                            ranges.Remove(range);
+                            isRestarting = true;
+                            break;
+                        }
+                    }
+                }
+                while (isRestarting);
+
+                ranges.Add(newRange);
+            }
+
+            return ranges;
+        }
+
+        private static Tuple<long,long> CombineRanges(Tuple<long, long> range1, Tuple<long, long> range2)
+        {
+            return new Tuple<long, long>(Math.Min(range1.Item1, range2.Item1), Math.Max(range1.Item2, range2.Item2));
+        }
+
+        private static bool CheckForOverlap(Tuple<long, long> range1, Tuple<long, long> range2)
+        {
+            return range1.Item1.IsBetween(range2.Item1, range2.Item2) ||
+                range1.Item2.IsBetween(range2.Item1, range2.Item2) ||
+                range2.Item1.IsBetween(range1.Item1, range1.Item2) ||
+                range2.Item2.IsBetween(range1.Item1, range1.Item2);
         }
 
         private static void RunDay14()
