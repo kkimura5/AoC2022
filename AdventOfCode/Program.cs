@@ -75,6 +75,7 @@ namespace AdventOfCode
             var validValves = allValves.Where(x => !x.IsOpen && x.FlowRate > 0);
             var currentValve = startValve;
             var paths = new List<DoublePath>();
+            int maxScore = 0;
             paths.Add(new DoublePath(new List<Valve>() { startValve }));
             while (!paths.All(x => x.AllValves.Count == validValves.Count() + 1))
             {
@@ -101,8 +102,24 @@ namespace AdventOfCode
                             newPaths = enumerable.Select(x => path.CreateNext(remainingValve, x)).ToList();
                         }
 
-                        //2639
-                        nextIteration = nextIteration.Concat(newPaths).OrderByDescending(x => CalculateScore(x, allValves, totalMinutes, true)).Take(400).ToList();
+                        var filteredPaths = new List<DoublePath>();
+                        var maxLength = totalMinutes / 2;
+                        foreach (var newPath in newPaths)
+                        {
+                            var yourScore = CalculateScore(newPath.YourPath, allValves, totalMinutes, false);
+                            var elephantScore = CalculateScore(newPath.ElephantPath, allValves, totalMinutes, false);
+                            if (newPath.YourPath.Max(x => x.OpenTime) >= totalMinutes &&
+                                newPath.ElephantPath.Max(x => x.OpenTime) >= totalMinutes)
+                            {
+                                filteredPaths.Add(newPath);
+                            }
+
+                            maxLength = new List<int>() { maxLength, newPath.YourPath.Max(x => x.OpenTime), newPath.YourPath.Max(x => x.OpenTime) }.Max();
+                            allValves.ForEach(x => x.Reset());
+                        }
+
+                        nextIteration = nextIteration.Concat(newPaths.Except(filteredPaths)).OrderByDescending(x => CalculateScore(x, allValves, Math.Min(maxLength, totalMinutes), true)).Take(500).ToList();
+                        maxScore = filteredPaths.Any() ? Math.Max(maxScore, filteredPaths.Max(x => CalculateScore(x, allValves, totalMinutes, true))) : maxScore;
                     }
                 }
 
@@ -114,6 +131,7 @@ namespace AdventOfCode
                 paths = nextIteration;
             }
 
+            Console.WriteLine($"Possible max score {maxScore}");
             return paths.OrderBy(x => CalculateScore(x, allValves, totalMinutes, true)).Last();
         }
         private static int CalculateScore(DoublePath doublePath, List<Valve> allValves, int totalMinutes, bool reset)
