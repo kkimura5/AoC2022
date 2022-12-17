@@ -29,7 +29,169 @@ namespace AdventOfCode
             RunDay13();
             RunDay14();
             RunDay15();
+            RunDay16();
             Console.ReadKey();
+        }
+
+
+        private static void RunDay16()
+        {
+            var lines = File.ReadAllLines(".\\Input\\Day16.txt").ToList();
+            var allValves = new List<Valve>();
+            var pattern = @"Valve (?<name>\w+) has flow rate=(?<flowRate>\d+); tunnels? leads? to valves? (?<valves>(\w+(, )?)+)";
+            for (int i = 0; i < lines.Count; i++)
+            {
+                var line = lines[i];
+                var match = Regex.Match(line, pattern);
+                var valve = new Valve(match.Groups["name"].Value, int.Parse(match.Groups["flowRate"].Value));
+                allValves.Add(valve);
+            }
+
+            for (int i = 0; i < lines.Count; i++)
+            {
+                var line = lines[i];
+                var match = Regex.Match(line, pattern);
+                var valve = allValves.Single(x => x.Name == match.Groups["name"].Value);
+                valve.LinkedValves.AddRange(match.Groups["valves"].Value.Split(',').Select(x => allValves.Single(v => v.Name == x.Trim())));
+            }
+
+            int totalMinutes = 30;
+
+            var currentValve = allValves.Single(x => x.Name == "AA");
+            var path = GetBestPath(currentValve, allValves, totalMinutes);
+            var score = CalculateScore(path, allValves, totalMinutes, false);
+            Console.WriteLine($"Day 16 part 1: {score}");
+
+            totalMinutes = 26;
+            allValves.ForEach(x => x.Reset());
+
+            var doublepath = GetBestDoublePath(currentValve, allValves, totalMinutes);
+            score = CalculateScore(doublepath, allValves, totalMinutes, false);
+            Console.WriteLine($"Day 16 part 2: {score}");
+        }
+
+        private static DoublePath GetBestDoublePath(Valve startValve, List<Valve> allValves, int totalMinutes)
+        {
+            var validValves = allValves.Where(x => !x.IsOpen && x.FlowRate > 0);
+            var currentValve = startValve;
+            var paths = new List<DoublePath>();
+            paths.Add(new DoublePath(new List<Valve>() { startValve }));
+            while (!paths.All(x => x.AllValves.Count == validValves.Count() + 1))
+            {
+                var nextIteration = new List<DoublePath>();
+                var found = false;
+                foreach (var path in paths.ToList())
+                {
+                    var remainingValves = validValves.Except(path.YourPath).Except(path.ElephantPath).ToList();
+                    if (!remainingValves.Any())
+                    {
+                        found = true;
+                        break;
+                    }
+                    foreach (var remainingValve in remainingValves)
+                    {
+                        var enumerable = remainingValves.Where(x => x != remainingValve).ToList();
+                        List<DoublePath> newPaths;
+                        if (!enumerable.Any())
+                        {
+                            newPaths = new List<DoublePath>() { path.CreateNext(remainingValve, path.ElephantPath.First()), path.CreateNext(path.YourPath.First(), remainingValve) };
+                        }
+                        else
+                        {
+                            newPaths = enumerable.Select(x => path.CreateNext(remainingValve, x)).ToList();
+                        }
+
+                        //2639
+                        nextIteration = nextIteration.Concat(newPaths).OrderByDescending(x => CalculateScore(x, allValves, totalMinutes, true)).Take(400).ToList();
+                    }
+                }
+
+                if (found)
+                {
+                    break;
+                }
+
+                paths = nextIteration;
+            }
+
+            return paths.OrderBy(x => CalculateScore(x, allValves, totalMinutes, true)).Last();
+        }
+        private static int CalculateScore(DoublePath doublePath, List<Valve> allValves, int totalMinutes, bool reset)
+        {
+            return CalculateScore(doublePath.YourPath, allValves, totalMinutes, reset) + CalculateScore(doublePath.ElephantPath, allValves, totalMinutes, reset);
+        }
+
+        private static List<Valve> GetBestPath(Valve startValve, List<Valve> allValves, int totalMinutes)
+        {
+            var validValves = allValves.Where(x => !x.IsOpen && x.FlowRate > 0);
+            var currentValve = startValve;
+            var paths = new List<List<Valve>>();
+            paths.Add(new List<Valve>() { startValve });
+            while (!paths.All(x => x.Count == validValves.Count() + 1))
+            {
+                var nextIteration = new List<List<Valve>>();
+                foreach (var path in paths.ToList())
+                {
+                    var remainingValves = validValves.Except(path).ToList();
+                    var newPaths = remainingValves.Select(x => path.Concat(new List<Valve>() { x }).ToList()).ToList();
+                    nextIteration = nextIteration.Concat(newPaths).OrderByDescending(x => CalculateScore(x, allValves, totalMinutes, true)).Take(50).ToList();
+                }
+
+                paths = nextIteration;
+            }
+
+            return paths.OrderBy(x => CalculateScore(x, allValves, totalMinutes, true)).Last();
+        }
+
+        private static int CalculateScore(List<Valve> path, List<Valve> allValves, int totalMinutes, bool reset)
+        { 
+            var current = path.First();
+            var totalDistance = 0;
+            foreach (var valve in path.Skip(1))
+            {
+                var shortestDistance = FindShortestDistance(current, valve, allValves);
+                totalDistance += shortestDistance + 1;
+                valve.Open(totalDistance);
+                current = valve;
+            }
+
+            var score = path.Select(x => x.GetScore(totalMinutes)).Sum();
+            if (reset)
+            {
+                path.ForEach(x => x.Reset());
+            }
+
+            return score;
+        }
+
+        private static int FindShortestDistance(Valve currentValve, Valve validValve, List<Valve> allValves)
+        {
+            var paths = new List<List<Valve>>() { new List<Valve>() { currentValve } };
+            var found = false;
+            var key = string.Join(string.Empty, new List<Valve>() { currentValve, validValve }.OrderBy(x => x.Name).Select(x => x.Name));
+            if (distanceCache.ContainsKey(key))
+            {
+                return distanceCache[key];
+            }
+
+            while (!found)
+            {
+                foreach (var path in paths.ToList())
+                {
+                    var newPaths = path.Last().LinkedValves.Where(x => !path.Contains(x))
+                        .Select(x => path.Concat(new List<Valve>() { x }).ToList()).ToList();
+                    paths.Remove(path);
+                    paths.AddRange(newPaths);
+                }
+
+                found = paths.Any(x => x.Last() == validValve);
+
+            }
+
+            int distance = paths.Where(x => x.Last() == validValve).Min(x => x.Count - 1);
+            distanceCache[key] = distance;
+
+            return distance;
         }
 
         private static void RunDay15()
