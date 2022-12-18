@@ -12,17 +12,17 @@ namespace AdventOfCode
         public Tower(int width)
         {
             this.towerWidth = width;
-            Heights = Enumerable.Repeat(0, width).ToList();
+            Heights = Enumerable.Repeat((long)0, width).ToList();
         }
 
         public List<TowerRow> TowerRows { get; private set; } = new List<TowerRow>();
-        public List<int> Heights { get; private set; }
+        public List<long> Heights { get; private set; }
 
         internal void AddRock(Rock rock)
         {
             for (int i = rock.RockShape.Count-1; i >=0; i--)
             {
-                var rowHeight = rock.DropHeight + rock.RockShape.Count - 1 - i;
+                long rowHeight = rock.DropHeight + rock.RockShape.Count - 1 - i;
                 var rockRow = rock.RockShape[i];
                 var towerRow = TowerRows.SingleOrDefault(x => x.Height == rowHeight);
                 if (towerRow is null)
@@ -47,7 +47,7 @@ namespace AdventOfCode
             {
                 if (towerRow.FilledStates.Count(x => x) == towerRow.FilledStates.Count)
                 {
-                    TowerRows = TowerRows.Where(x => x.Height >= towerRow.Height).ToList();
+                    TowerRows = TowerRows.Where(x => x.Height >= towerRow.Height || x.Height < 10).ToList();
                     return;
                 }
                 else if (towerRow.FilledStates.Count(x => x) == towerRow.FilledStates.Count - 1)
@@ -55,13 +55,13 @@ namespace AdventOfCode
                     var openIndices = towerRow.FilledStates.Where(x => !x).Select((x, i) => i).ToList();
                     if(TowerRows.Any(x => x.Height > towerRow.Height && openIndices.All(i => x.FilledStates[i])))
                     {
-                        TowerRows = TowerRows.Where(x => x.Height >= towerRow.Height).ToList();
+                        TowerRows = TowerRows.Where(x => x.Height >= towerRow.Height || x.Height < 10).ToList();
                         return;
                     }
                 }
             }
 
-            TowerRows = TowerRows.OrderByDescending(x => x.Height).Take(100).ToList();
+            TowerRows = TowerRows.OrderByDescending(x => x.Height).Take(100).Concat(TowerRows.Where(x => x.Height < 10)).Distinct().ToList();
         }
 
         internal bool CanMoveRight(Rock rock)

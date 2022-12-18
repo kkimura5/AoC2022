@@ -62,7 +62,7 @@ namespace AdventOfCode
             }
         }
 
-        public int DropHeight { get; private set; }
+        public long DropHeight { get; private set; }
         public int SidePosition { get; private set; }
 
         public void MoveRight(Tower tower)
@@ -105,7 +105,7 @@ namespace AdventOfCode
 
         public bool IsDropComplete { get; private set; }
 
-        public void StartDrop(int startHeight)
+        public void StartDrop(long startHeight)
         {
             DropHeight = startHeight;
             SidePosition = 2;

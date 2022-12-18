@@ -46,7 +46,6 @@ namespace AdventOfCode
             long rockCount = 0;
             var jetIndex = 0;
             long totalRocks = 2022;
-            var stopwatch = Stopwatch.StartNew();
             while (rockCount < totalRocks)
             {
                 int index = (int)(rockCount % rockOrder.Count);
@@ -55,6 +54,46 @@ namespace AdventOfCode
             }
 
             Console.WriteLine($"Day 17 part 1: {tower.Heights.Max()}");
+
+            tower = new Tower(7);
+            rockCount = 0;
+            jetIndex = 0;
+            totalRocks = (long)1e12;
+            var repetition = rockOrder.Count * line.Length;
+
+            while (rockCount < 1000)
+            {
+                int index = (int)(rockCount % rockOrder.Count);
+                DropRock(tower, rockOrder[index], line, ref jetIndex);
+                rockCount++;
+            }
+
+            long lastHeight = tower.Heights.Max();
+            long lastRockCount = rockCount;
+            var refIndex = jetIndex;
+
+            do
+            {
+                int index = (int)(rockCount % rockOrder.Count);
+                DropRock(tower, rockOrder[index], line, ref jetIndex);
+                rockCount++;
+            }
+            while ((rockCount % 5) > 0 || jetIndex != refIndex);
+            var heightDiff = tower.Heights.Max() - lastHeight;
+            var rockDiff = rockCount - lastRockCount;
+
+            long numTimes = (totalRocks - rockCount) / rockDiff;
+            rockCount += numTimes * rockDiff;
+            long totalHeightDiff = numTimes * heightDiff;
+
+            while (rockCount < totalRocks)
+            {
+                int index = (int)(rockCount % rockOrder.Count);
+                DropRock(tower, rockOrder[index], line, ref jetIndex);
+                rockCount++;
+            }
+
+            Console.WriteLine($"Day 17 part 2: {tower.Heights.Max() + totalHeightDiff}");
         }
 
         private static void DropRock(Tower tower, string rockType, string line, ref int jetIndex)
