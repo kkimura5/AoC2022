@@ -16,31 +16,31 @@ namespace AdventOfCode
         public void Reset()
         {
             IsOpen = false;
-            timeOpened = 0;
+            OpenTime = 0;
         }
 
         public void Open(int minute)
         {
             IsOpen = true;
-            this.timeOpened = minute;
+            OpenTime = minute;
         }
 
         public int GetScore(int totalMinutes)
         {
-            return Math.Max(0, (totalMinutes - timeOpened) * FlowRate);
+            return Math.Max(0, (totalMinutes - OpenTime) * FlowRate);
         }
 
         public List<Valve> LinkedValves { get; set; } = new List<Valve>();
         public bool IsOpen { get; set; }
 
-        private int timeOpened;
+        public int OpenTime { get; private set; }
 
         public string Name { get; private set; }
         public int FlowRate { get; private set; }
 
         public override string ToString()
         {
-            return $"Valve {Name}; Flow {FlowRate}; Opened {timeOpened}; Linked to {string.Join(", ", LinkedValves.Select(x => x.Name))}";
+            return $"Valve {Name}; Flow {FlowRate}; Opened {OpenTime}; Linked to {string.Join(", ", LinkedValves.Select(x => x.Name))}";
         }
     }
 }

@@ -7,11 +7,14 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Data;
+using System.Diagnostics;
 
 namespace AdventOfCode
 {
     class Program
     {
+        private static Dictionary<string, int> distanceCache = new Dictionary<string, int>();
+
         static void Main(string[] args)
         {
             RunDay1();
@@ -30,9 +33,59 @@ namespace AdventOfCode
             RunDay14();
             RunDay15();
             RunDay16();
+            RunDay17();
             Console.ReadKey();
         }
 
+        private static void RunDay17()
+        {
+            var line = File.ReadAllLines(".\\Input\\Day17.txt").ToList().First();
+
+            var rockOrder = new List<string> { "-", "+", "L", "|", "o" };
+            var tower = new Tower(7);
+            long rockCount = 0;
+            var jetIndex = 0;
+            long totalRocks = 2022;
+            var stopwatch = Stopwatch.StartNew();
+            while (rockCount < totalRocks)
+            {
+                int index = (int)(rockCount % rockOrder.Count);
+                DropRock(tower, rockOrder[index], line, ref jetIndex);
+                rockCount++;
+            }
+
+            Console.WriteLine($"Day 17 part 1: {tower.Heights.Max()}");
+        }
+
+        private static void DropRock(Tower tower, string rockType, string line, ref int jetIndex)
+        {
+            var rock = new Rock(rockType);
+            rock.StartDrop(tower.Heights.Max() + 3);
+            var isDropping = false;
+
+            while (!rock.IsDropComplete)
+            {
+                if (isDropping)
+                {
+                    rock.Drop(tower);
+                    isDropping = false;
+                }
+                else
+                {
+                    if (line[jetIndex] == '<')
+                    {
+                        rock.MoveLeft(tower);
+                    }
+                    else
+                    {
+                        rock.MoveRight(tower);
+                    }
+
+                    jetIndex = (jetIndex + 1) % line.Length;
+                    isDropping = true;
+                }
+            }
+        }
 
         private static void RunDay16()
         {
@@ -62,12 +115,12 @@ namespace AdventOfCode
             var score = CalculateScore(path, allValves, totalMinutes, false);
             Console.WriteLine($"Day 16 part 1: {score}");
 
-            totalMinutes = 26;
-            allValves.ForEach(x => x.Reset());
+            //totalMinutes = 26;
+            //allValves.ForEach(x => x.Reset());
 
-            var doublepath = GetBestDoublePath(currentValve, allValves, totalMinutes);
-            score = CalculateScore(doublepath, allValves, totalMinutes, false);
-            Console.WriteLine($"Day 16 part 2: {score}");
+            //var doublepath = GetBestDoublePath(currentValve, allValves, totalMinutes);
+            //score = CalculateScore(doublepath, allValves, totalMinutes, false);
+            //Console.WriteLine($"Day 16 part 2: {score}");
         }
 
         private static DoublePath GetBestDoublePath(Valve startValve, List<Valve> allValves, int totalMinutes)

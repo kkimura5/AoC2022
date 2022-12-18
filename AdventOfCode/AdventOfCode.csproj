@@ -56,8 +56,12 @@
     <Compile Include="Path.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Rock.cs" />
+    <Compile Include="RockRow.cs" />
     <Compile Include="SandCastle.cs" />
     <Compile Include="Sensor.cs" />
+    <Compile Include="Tower.cs" />
+    <Compile Include="TowerRow.cs" />
     <Compile Include="Valve.cs" />
   </ItemGroup>
   <ItemGroup>
