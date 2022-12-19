@@ -14,7 +14,7 @@ namespace AdventOfCode
     class Program
     {
         private static Dictionary<string, int> distanceCache = new Dictionary<string, int>();
-
+        private static Dictionary<string, bool> wayOutCache = new Dictionary<string, bool>();
         static void Main(string[] args)
         {
             RunDay1();
@@ -34,7 +34,7 @@ namespace AdventOfCode
             RunDay15();
             RunDay16();
             RunDay17();
-            //RunDay18();
+            RunDay18();
             Console.ReadKey();
         }
 
@@ -57,7 +57,6 @@ namespace AdventOfCode
 
             int innerSides = 0;
             var emptyCubes = GetEmptyCubes(cubes).Distinct(new CubeEqualityComparer()).ToList();
-            var processedCubes = new Dictionary<Cube, bool>();
             foreach (var emptyCube in emptyCubes)
             {
                 if (!DoesPathOutExist(emptyCube, cubes))
@@ -97,6 +96,12 @@ namespace AdventOfCode
                     };
 
                     var newPaths = newCubes.Where(x => !cubes.Any(c => c.IsCoincident(x)) && !visited.Any(v => v.IsCoincident(x))).ToList();
+                    var existingWayOut = newPaths.FirstOrDefault(x => wayOutCache.ContainsKey(x.ToString()));
+                    if (existingWayOut != null)
+                    {
+                        return wayOutCache[existingWayOut.ToString()];
+                    }
+
                     visited.AddRange(newPaths);
                     visited = visited.Distinct(new CubeEqualityComparer()).ToList();
                     allPaths.Remove(path);
@@ -106,6 +111,11 @@ namespace AdventOfCode
                 isFree = !allPaths.Any() || allPaths.Any(p => !p.X.IsBetween(minX, maxX) ||
                                       !p.Y.IsBetween(minY, maxY) ||
                                       !p.Z.IsBetween(minZ, maxZ));
+            }
+
+            foreach (var cube in visited)
+            {
+                wayOutCache.Add(cube.ToString(), allPaths.Any());
             }
 
             return allPaths.Any();
