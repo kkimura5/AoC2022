@@ -34,7 +34,158 @@ namespace AdventOfCode
             RunDay15();
             RunDay16();
             RunDay17();
+            //RunDay18();
             Console.ReadKey();
+        }
+
+        private static void RunDay18()
+        {
+            var lines = File.ReadAllLines(".\\Input\\Day18.txt").ToList();
+            var cubes = new List<Cube>();
+            foreach (var line in lines)
+            {
+                var cube = new Cube(line);
+                var adjacentCubes = cubes.Where(x => x.IsAdjacent(cube)).ToList();
+                cube.CoveredSides += adjacentCubes.Count;
+                adjacentCubes.ForEach(x => x.CoveredSides++);
+
+                cubes.Add(cube);
+            }
+
+            int numSides = cubes.Count * 6 - cubes.Sum(x => x.CoveredSides);
+            Console.WriteLine($"Day 18 part 1: {numSides}");
+
+            int innerSides = 0;
+            var emptyCubes = GetEmptyCubes(cubes).Distinct(new CubeEqualityComparer()).ToList();
+            var processedCubes = new Dictionary<Cube, bool>();
+            foreach (var emptyCube in emptyCubes)
+            {
+                if (!DoesPathOutExist(emptyCube, cubes))
+                {
+                    var adjacentCubes = cubes.Where(x => x.IsAdjacent(emptyCube)).ToList();
+                    innerSides += adjacentCubes.Count;
+                }
+             }
+
+            Console.WriteLine($"Day 18 part 2: {numSides - innerSides}");
+        }
+
+        private static bool DoesPathOutExist(Cube emptyCube, List<Cube> cubes)
+        {
+            var maxX = cubes.Max(x => x.X);
+            var maxY = cubes.Max(x => x.Y);
+            var maxZ = cubes.Max(x => x.Z);
+            var minX = cubes.Min(x => x.X);
+            var minY = cubes.Min(x => x.Y);
+            var minZ = cubes.Min(x => x.Z);
+
+            var allPaths = new List<Cube> { emptyCube };
+            var isFree = false;
+            var visited = new List<Cube>() { emptyCube };
+            while (!isFree)
+            {
+                foreach (var path in allPaths.ToList())
+                {
+                    var newCubes = new List<Cube>()
+                    {
+                        path.Offset(-1, 0, 0),
+                        path.Offset(1, 0, 0),
+                        path.Offset(0, 1, 0),
+                        path.Offset(0, -1, 0),
+                        path.Offset(0, 0, 1),
+                        path.Offset(0, 0, -1)
+                    };
+
+                    var newPaths = newCubes.Where(x => !cubes.Any(c => c.IsCoincident(x)) && !visited.Any(v => v.IsCoincident(x))).ToList();
+                    visited.AddRange(newPaths);
+                    visited = visited.Distinct(new CubeEqualityComparer()).ToList();
+                    allPaths.Remove(path);
+                    allPaths.AddRange(newPaths);
+                }
+
+                isFree = !allPaths.Any() || allPaths.Any(p => !p.X.IsBetween(minX, maxX) ||
+                                      !p.Y.IsBetween(minY, maxY) ||
+                                      !p.Z.IsBetween(minZ, maxZ));
+            }
+
+            return allPaths.Any();
+        }
+
+        private static List<Cube> GetEmptyCubes(List<Cube> cubes)
+        {
+            var emptyCubes = new List<Cube>();
+            foreach (var cube in cubes)
+            {
+                for (int i = 0; i < 3; i++)
+                {
+                    switch (i)
+                    {
+                        case 0:
+                            var adjacentCubes = cubes.Where(x => x.IsAdjacentX(cube)).ToList();
+                            if (!adjacentCubes.Any())
+                            {
+                                emptyCubes.Add(cube.Offset(1, 0, 0));
+                                emptyCubes.Add(cube.Offset(-1, 0, 0));
+                            }
+                            else if (adjacentCubes.Count == 1)
+                            {
+                                if (cubes.Any(x => x.X == cube.X + 1 && cube.Y == x.Y && cube.Z == x.Z))
+                                {
+                                    emptyCubes.Add(cube.Offset(-1, 0, 0));
+                                }
+                                else
+                                {
+                                    emptyCubes.Add(cube.Offset(1, 0, 0));
+                                }
+                            }
+
+                            break;
+                        case 1:
+                            var adjacentCubesY = cubes.Where(x => x.IsAdjacentY(cube)).ToList();
+                            if (!adjacentCubesY.Any())
+                            {
+                                emptyCubes.Add(cube.Offset(0, 1, 0));
+                                emptyCubes.Add(cube.Offset(0, -1, 0));
+                            }
+                            else if (adjacentCubesY.Count == 1)
+                            {
+                                if (cubes.Any(x => x.X == cube.X && cube.Y + 1 == x.Y && cube.Z == x.Z))
+                                {
+                                    emptyCubes.Add(cube.Offset(0, -1, 0));
+                                }
+                                else
+                                {
+                                    emptyCubes.Add(cube.Offset(0, 1, 0));
+                                }
+                            }
+                            break;
+                        case 2:
+
+                            var adjacentCubesZ = cubes.Where(x => x.IsAdjacentZ(cube)).ToList();
+                            if (!adjacentCubesZ.Any())
+                            {
+                                emptyCubes.Add(cube.Offset(0, 0, 1));
+                                emptyCubes.Add(cube.Offset(0, 0, -1));
+                            }
+                            else if (adjacentCubesZ.Count == 1)
+                            {
+                                if (cubes.Any(x => x.X == cube.X && cube.Y == x.Y && cube.Z + 1 == x.Z))
+                                {
+                                    emptyCubes.Add(cube.Offset(0, 0, -1));
+                                }
+                                else
+                                {
+                                    emptyCubes.Add(cube.Offset(0, 0, 1));
+                                }
+                            }
+                            break;
+
+                    }
+                }
+
+            }
+
+            return emptyCubes;
         }
 
         private static void RunDay17()
@@ -59,7 +210,6 @@ namespace AdventOfCode
             rockCount = 0;
             jetIndex = 0;
             totalRocks = (long)1e12;
-            var repetition = rockOrder.Count * line.Length;
 
             while (rockCount < 1000)
             {
@@ -254,7 +404,7 @@ namespace AdventOfCode
         }
 
         private static int CalculateScore(List<Valve> path, List<Valve> allValves, int totalMinutes, bool reset)
-        { 
+        {
             var current = path.First();
             var totalDistance = 0;
             foreach (var valve in path.Skip(1))
@@ -395,7 +545,7 @@ namespace AdventOfCode
             return ranges;
         }
 
-        private static Tuple<long,long> CombineRanges(Tuple<long, long> range1, Tuple<long, long> range2)
+        private static Tuple<long, long> CombineRanges(Tuple<long, long> range1, Tuple<long, long> range2)
         {
             return new Tuple<long, long>(Math.Min(range1.Item1, range2.Item1), Math.Max(range1.Item2, range2.Item2));
         }
@@ -417,8 +567,8 @@ namespace AdventOfCode
                 var textLine = textLines[i];
                 var pattern = @"(?<x>\d+),(?<y>\d+)";
                 var matches = Regex.Matches(textLine, pattern);
-                Point currentPoint = new Point(0, 0), previousPoint = new Point(0,0);
-                
+                Point currentPoint = new Point(0, 0), previousPoint = new Point(0, 0);
+
                 foreach (Match match in matches)
                 {
                     currentPoint = new Point(int.Parse(match.Groups["x"].Value), int.Parse(match.Groups["y"].Value));
@@ -504,7 +654,7 @@ namespace AdventOfCode
             var paths = new List<Path>();
             bool[,] visited = new bool[lines.Count, lines.First().Length];
 
-            for (int y= 0; y < lines.Count; y++ )
+            for (int y = 0; y < lines.Count; y++)
             {
                 var line = lines[y];
                 for (int x = 0; x < line.Length; x++)
@@ -525,14 +675,14 @@ namespace AdventOfCode
                 {
                     var newPoints = path.GetNewPoints().Where(p => IsValidPoint(lines, p, path.Height) && !visited[p.Y, p.X]).ToList();
                     paths.Remove(path);
-                    
+
                     foreach (var point in newPoints)
                     {
                         var newPath = path.Copy();
                         newPath.CurrentPoint = point;
                         newPath.Height = lines[point.Y][point.X];
                         newPath.NumSteps++;
-                        visited[point.Y,point.X] = true;
+                        visited[point.Y, point.X] = true;
                         paths.Add(newPath);
                     }
                 }
@@ -563,9 +713,9 @@ namespace AdventOfCode
                 {
                     monkeys.Add(new Monkey(monkeys.Count));
                 }
-                else if(line.Contains("Starting items"))
+                else if (line.Contains("Starting items"))
                 {
-                    monkeys.Last().Items = new Queue<int>(line.Substring(line.IndexOf(':')+1).Split(',').Select(x => int.Parse(x)).ToList());
+                    monkeys.Last().Items = new Queue<int>(line.Substring(line.IndexOf(':') + 1).Split(',').Select(x => int.Parse(x)).ToList());
                     items.AddRange(line.Substring(line.IndexOf(':') + 1).Split(',').Select(x => int.Parse(x)).Select(x => new MonkeyItem(x, monkeys.Last())));
                 }
                 else if (line.Contains("Operation"))
@@ -574,15 +724,15 @@ namespace AdventOfCode
                 }
                 else if (line.Contains("Test"))
                 {
-                    monkeys.Last().TestValue = int.Parse(line.Substring(line.IndexOf(':') + 1).Replace("divisible by",string.Empty));
+                    monkeys.Last().TestValue = int.Parse(line.Substring(line.IndexOf(':') + 1).Replace("divisible by", string.Empty));
                 }
                 else if (line.Contains("If true"))
                 {
-                    monkeys.Last().DestIfTrue = int.Parse(line.Substring(line.IndexOf(':') + 1).Replace("throw to monkey",string.Empty));
+                    monkeys.Last().DestIfTrue = int.Parse(line.Substring(line.IndexOf(':') + 1).Replace("throw to monkey", string.Empty));
                 }
                 else if (line.Contains("If false"))
                 {
-                    monkeys.Last().DestIfFalse = int.Parse(line.Substring(line.IndexOf(':') + 1).Replace("throw to monkey",string.Empty));
+                    monkeys.Last().DestIfFalse = int.Parse(line.Substring(line.IndexOf(':') + 1).Replace("throw to monkey", string.Empty));
                 }
             }
 
@@ -594,7 +744,7 @@ namespace AdventOfCode
                 }
             }
 
-            for (int round = 0; round<20; round++)
+            for (int round = 0; round < 20; round++)
             {
                 foreach (var monkey in monkeys)
                 {
@@ -654,7 +804,7 @@ namespace AdventOfCode
             {
                 total *= monkey.InspectionCount;
             }
-            
+
             Console.WriteLine($"Day 11 part 2: {total}");
         }
 
@@ -671,7 +821,7 @@ namespace AdventOfCode
             while (i < lines.Count() || turnsToWait != 0)
             {
                 if (turnsToWait == 0)
-                {                    
+                {
                     var line = lines[i];
                     if (line.StartsWith("addx"))
                     {
@@ -692,7 +842,7 @@ namespace AdventOfCode
                 }
 
 
-                var horzPosition = (cycle % 40) -1;
+                var horzPosition = (cycle % 40) - 1;
                 if (horzPosition < 0) horzPosition += 40;
                 if (Math.Abs(xVal - horzPosition) <= 1)
                 {
@@ -708,7 +858,7 @@ namespace AdventOfCode
                 cycle++;
             }
 
-            
+
             Console.WriteLine($"Day 10 part 1: {total1}");
             Console.WriteLine($"Day 10 part 2:");
 
@@ -745,16 +895,16 @@ namespace AdventOfCode
                     switch (direction)
                     {
                         case 'L':
-                            headKnot.Move(-1,0); 
+                            headKnot.Move(-1, 0);
                             break;
                         case 'R':
-                            headKnot.Move(1,0); 
+                            headKnot.Move(1, 0);
                             break;
                         case 'U':
-                            headKnot.Move(0,1); 
+                            headKnot.Move(0, 1);
                             break;
                         case 'D':
-                            headKnot.Move(0,-1); 
+                            headKnot.Move(0, -1);
                             break;
                     }
 
@@ -780,13 +930,13 @@ namespace AdventOfCode
         {
             var lines = File.ReadAllLines(".\\Input\\Day8.txt");
             long total1 = 0, total2 = 0;
-            
+
             for (int i = 0; i < lines.Count(); i++)
             {
                 var line = lines[i];
                 for (int j = 0; j < line.Length; j++)
                 {
-                    if (i == 0 || j == 0 || i == line.Length-1 || j == line.Length-1)
+                    if (i == 0 || j == 0 || i == line.Length - 1 || j == line.Length - 1)
                     {
                         total1++;
                     }
@@ -844,12 +994,12 @@ namespace AdventOfCode
             for (int i = 0; i < lines.Count(); i++)
             {
                 var line = lines[i];
-                
+
                 if (line.StartsWith("$ cd"))
                 {
                     currentFolder = ChangeDirectory(topFolder, currentFolder, line);
                 }
-                else if(line.StartsWith("$ ls"))
+                else if (line.StartsWith("$ ls"))
                 {
                     // do nothing
                 }
@@ -879,7 +1029,7 @@ namespace AdventOfCode
             }
 
             var allFolders = topFolder.GetAllFolders();
-            var total1= allFolders.Where(x => x.GetSize() <= 100000).Sum(x => x.GetSize());
+            var total1 = allFolders.Where(x => x.GetSize() <= 100000).Sum(x => x.GetSize());
 
             Console.WriteLine($"Day 7 part 1: {total1}");
 
@@ -954,7 +1104,7 @@ namespace AdventOfCode
         private static void RunDay5()
         {
             var stacks = new List<List<char>>();
-            for (int j = 0; j< 9; j++)
+            for (int j = 0; j < 9; j++)
             {
                 stacks.Add(new List<char>());
             }
@@ -972,14 +1122,14 @@ namespace AdventOfCode
                 var col = 0;
                 while (!string.IsNullOrEmpty(line))
                 {
-                    var character = line.Substring(0, Math.Min(line.Length,4));
+                    var character = line.Substring(0, Math.Min(line.Length, 4));
                     if (!string.IsNullOrWhiteSpace(character))
                     {
                         stacks[col].Add(character[1]);
                     }
 
-                    
-                    if (line.Length< 4)
+
+                    if (line.Length < 4)
                     {
                         break;
                     }
@@ -1075,7 +1225,7 @@ namespace AdventOfCode
 
                 if ((i % 3) == 2)
                 {
-                    var priority2  = lines[i].Intersect(lines[i - 1]).Intersect(lines[i - 2]).Single();
+                    var priority2 = lines[i].Intersect(lines[i - 1]).Intersect(lines[i - 2]).Single();
                     if (priority2 >= 'a')
                     {
                         total2 += priority2 - 'a' + 1;
