@@ -35,7 +35,84 @@ namespace AdventOfCode
             RunDay16();
             RunDay17();
             RunDay18();
+            //RunDay20();
             Console.ReadKey();
+        }
+
+        private static void RunDay20()
+        {
+            var lines = File.ReadAllLines(".\\Input\\Day20.txt").Select(x => new DecryptionVal(long.Parse(x))).ToList();
+
+            var newLines = MixNumbers(lines.ToList(), lines);
+            Console.WriteLine($"Day 20 part 1: {CalculateGrove(newLines)}");
+
+            lines = lines.Select(x => new DecryptionVal(x.Value * 811589153)).ToList();
+            newLines = lines.ToList();
+            for (int i = 0; i< 10; i++)
+            {
+                newLines = MixNumbers(newLines.ToList(), lines);
+            }
+
+            Console.WriteLine($"Day 20 part 2: {CalculateGrove(newLines)}");
+        }
+
+        private static long CalculateGrove(List<DecryptionVal> values)
+        {
+            var startIndex = values.IndexOf(values.Single(x => x.Value == 0));
+            var index1 = (startIndex + 1000) % values.Count;
+            var index2 = (startIndex + 2000) % values.Count;
+            var index3 = (startIndex + 3000) % values.Count;
+            var grove = values[index1].Value + values[index2].Value + values[index3].Value;
+            return grove;
+        }
+
+        private static List<DecryptionVal> MixNumbers(List<DecryptionVal> values, List<DecryptionVal> originalOrder)
+        {
+            var newValues = values.ToList();
+            for (int index = 0; index < originalOrder.Count; index++)
+            {
+                var value = originalOrder[index];
+                if (value.Value == 0)
+                {
+                    continue;
+                }
+
+                var currentIndex = newValues.IndexOf(value);
+                var spacesToMove = Math.Sign(value.Value) * (Math.Abs(value.Value) % (values.Count - 1));
+                var newIndex = (int)(currentIndex + spacesToMove);
+
+                if (newIndex < 0)
+                {
+                    newIndex += values.Count - 1;
+                }
+                else if (newIndex == 0 && currentIndex != 0)
+                {
+                    newIndex = values.Count - 1;
+                }
+                else if (newIndex > values.Count - 1)
+                {
+                    newIndex = (newIndex % values.Count) + 1;
+                }
+
+                if (newIndex > currentIndex)
+                {
+                    var tempList = newValues.Take(currentIndex).Concat(newValues.Skip(currentIndex + 1).Take(newIndex - currentIndex)).ToList();
+                    tempList.Add(value);
+                    tempList.AddRange(newValues.Skip(newIndex + 1).Take(values.Count - newIndex));
+                    newValues = tempList;
+                }
+                else if (newIndex < currentIndex)
+                {
+                    var tempList = newValues.Take(newIndex).ToList();
+                    tempList.Add(value);
+                    tempList.AddRange(newValues.Skip(newIndex).Take(currentIndex - newIndex));
+                    tempList.AddRange(newValues.Skip(currentIndex + 1).Take(newValues.Count - currentIndex));
+                    newValues = tempList;
+                }
+
+            }
+
+            return newValues;
         }
 
         private static void RunDay18()
@@ -64,7 +141,7 @@ namespace AdventOfCode
                     var adjacentCubes = cubes.Where(x => x.IsAdjacent(emptyCube)).ToList();
                     innerSides += adjacentCubes.Count;
                 }
-             }
+            }
 
             Console.WriteLine($"Day 18 part 2: {numSides - innerSides}");
         }

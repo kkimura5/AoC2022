@@ -45,6 +45,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Cube.cs" />
+    <Compile Include="DecryptionVal.cs" />
     <Compile Include="DoublePath.cs" />
     <Compile Include="Folder.cs" />
     <Compile Include="Helpers.cs" />
