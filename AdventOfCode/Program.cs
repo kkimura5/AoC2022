@@ -35,6 +35,7 @@ namespace AdventOfCode
             RunDay16();
             RunDay17();
             RunDay18();
+            //RunDay19();
             //RunDay20();
             Console.ReadKey();
         }
@@ -113,6 +114,85 @@ namespace AdventOfCode
             }
 
             return newValues;
+        }
+
+        private static void RunDay19()
+        {
+            var lines = File.ReadAllLines(".\\Input\\Day19.txt").ToList();
+
+            var numMinutes = 24;
+            var blueprints = lines.Select(x => new Blueprint(x, numMinutes)).ToList();
+            var maxGeodes = 0;
+            foreach (var blueprint in blueprints.OrderBy(x => x.GetTotalCost()).Take(5))
+            {
+                var robotState = new RobotState();
+                robotState.OreRobotCount = 1;
+
+                while (robotState.CurrentMinute < numMinutes)
+                {
+                    while (blueprint.CanBuy(robotState))
+                    {
+                        var bought = false;
+                        var metalPreferences = blueprint.GetMetalPreferences(robotState);
+
+                        foreach (var preference in metalPreferences)
+                        {
+                            switch (preference)
+                            {
+                                case "ore":
+                                    if (blueprint.CanBuyOreRobot(robotState))
+                                    {
+                                        robotState.Buy("ore");
+                                        robotState.OreCount -= blueprint.OreRobotCost.OreCost;
+                                        bought = true;
+                                    }
+                                    break;
+
+                                case "clay":
+                                    if (blueprint.CanBuyClayRobot(robotState))
+                                    {
+                                        robotState.Buy("clay");
+                                        robotState.OreCount -= blueprint.ClayRobotCost.OreCost;
+                                        bought = true;
+                                    }
+                                    break;
+
+                                case "obsidian":
+                                    if (blueprint.CanBuyObsidianRobot(robotState))
+                                    {
+                                        robotState.Buy("obsidian");
+                                        robotState.OreCount -= blueprint.ObsidianRobotCost.OreCost;
+                                        robotState.ClayCount -= blueprint.ObsidianRobotCost.ClayCost;
+                                        bought = true;
+                                    }
+                                    break;
+
+                                case "geode":
+                                    if (blueprint.CanBuyGeodeRobot(robotState))
+                                    {
+                                        robotState.Buy("geode");
+                                        robotState.OreCount -= blueprint.GeodeRobotCost.OreCost;
+                                        robotState.ObsidianCount -= blueprint.GeodeRobotCost.ObsidianCost;
+                                        bought = true;
+                                    }
+                                    break;
+                            }
+                        }
+
+                        if (!bought)
+                        {
+                            break;
+                        }
+                    }
+
+                    robotState.EndMinute();
+                }
+
+                maxGeodes = Math.Max(maxGeodes, robotState.GeodeCount);
+            }
+
+            Console.WriteLine($"Day 19 part 1: {maxGeodes}");
+            Console.WriteLine($"Day 19 part 2: ");
         }
 
         private static void RunDay18()
