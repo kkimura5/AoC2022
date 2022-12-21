@@ -17,24 +17,24 @@ namespace AdventOfCode
         private static Dictionary<string, bool> wayOutCache = new Dictionary<string, bool>();
         static void Main(string[] args)
         {
-            RunDay1();
-            RunDay2();
-            RunDay3();
-            RunDay4();
-            RunDay5();
-            RunDay6();
-            RunDay7();
-            RunDay8();
-            RunDay9();
-            RunDay10();
-            //RunDay11();
-            RunDay12();
-            RunDay13();
-            RunDay14();
-            RunDay15();
-            RunDay16();
-            RunDay17();
-            RunDay18();
+            //RunDay1();
+            //RunDay2();
+            //RunDay3();
+            //RunDay4();
+            //RunDay5();
+            //RunDay6();
+            //RunDay7();
+            //RunDay8();
+            //RunDay9();
+            //RunDay10();
+            ////RunDay11();
+            //RunDay12();
+            //RunDay13();
+            //RunDay14();
+            //RunDay15();
+            //RunDay16();
+            //RunDay17();
+            //RunDay18();
             //RunDay19();
             //RunDay20();
             RunDay21();
@@ -58,7 +58,6 @@ namespace AdventOfCode
             var op1 = root.OtherMonkeys[0];
             var op2 = root.OtherMonkeys[1];
             var humn = monkeys.Single(x => x.Name == "humn");
-            var curr = humn.Value;
             long i = 0;
             var iterationsize = 100000000000;
             while (op1.Value != op2.Value)
@@ -157,80 +156,135 @@ namespace AdventOfCode
         private static void RunDay19()
         {
             var lines = File.ReadAllLines(".\\Input\\Day19.txt").ToList();
+                       
+            RunDay19Part1(lines);
+            RunDay19Part2(lines);
+        }
 
-            var numMinutes = 24;
-            var blueprints = lines.Select(x => new Blueprint(x, numMinutes)).ToList();
-            var maxGeodes = 0;
-            foreach (var blueprint in blueprints.OrderBy(x => x.GetTotalCost()).Take(5))
+        private static void RunDay19Part2(List<string> lines)
+        {
+            var numMinutes = 32;
+            var blueprints = lines.Select(x => new Blueprint(x)).Take(3).ToList();
+            long result = 1;
+            foreach (var blueprint in blueprints)
             {
-                var robotState = new RobotState();
-                robotState.OreRobotCount = 1;
+                var robotStates = RunBlueprint(numMinutes, blueprint);
 
-                while (robotState.CurrentMinute < numMinutes)
+                result *= robotStates.Max(x => x.GeodeCount);
+                Console.WriteLine($"{blueprint.Number}: {robotStates.Max(x => x.GeodeCount)}");
+            }
+
+            Console.WriteLine($"Day 19 part 2: {result}");
+        }
+
+        private static void RunDay19Part1(List<string> lines)
+        {
+            var numMinutes = 24;
+            var blueprints = lines.Select(x => new Blueprint(x)).ToList();
+            foreach (var blueprint in blueprints)
+            {
+                var robotStates = RunBlueprint(numMinutes, blueprint);
+
+                blueprint.Qualitylevel = robotStates.Max(x => x.GeodeCount) * blueprint.Number;
+                Console.WriteLine($"{blueprint.Number}: {blueprint.Qualitylevel}");
+            }
+
+            Console.WriteLine($"Day 19 part 1: {blueprints.Sum(x => x.Qualitylevel)}");
+        }
+
+        private static List<RobotState> RunBlueprint(int numMinutes, Blueprint blueprint)
+        {
+            var robotStates = new List<RobotState>();
+            var startingState = new RobotState();
+            startingState.OreRobotCount = 1;
+            robotStates.Add(startingState);
+            var firstObsidianTurn = 0;
+            var firstGeodeTurn = 0;
+
+            while (robotStates.Any(x => x.CurrentMinute < numMinutes))
+            {
+                int currentMinute = robotStates.First().CurrentMinute;
+                foreach (var robotState in robotStates.Where(x => x.CurrentMinute < numMinutes).ToList())
                 {
-                    while (blueprint.CanBuy(robotState))
+                    if (blueprint.CanBuy(robotState))
                     {
-                        var bought = false;
-                        var metalPreferences = blueprint.GetMetalPreferences(robotState);
-
-                        foreach (var preference in metalPreferences)
+                        if (blueprint.CanBuyOreRobot(robotState) && robotState.CurrentMinute < numMinutes / 2 && (currentMinute < firstGeodeTurn || firstGeodeTurn == 0) && (currentMinute < firstObsidianTurn + numMinutes / 10 || firstObsidianTurn == 0))
                         {
-                            switch (preference)
+                            var newState = robotState.Copy();
+                            newState.Buy("ore");
+                            newState.OreCount -= blueprint.OreRobotCost.OreCost;
+                            robotStates.Add(newState);
+                            newState.EndMinute();
+                        }
+
+                        if (blueprint.CanBuyClayRobot(robotState) && (currentMinute < firstGeodeTurn + numMinutes / 4 || firstGeodeTurn == 0))
+                        {
+                            var newState = robotState.Copy();
+                            newState.Buy("clay");
+                            newState.OreCount -= blueprint.ClayRobotCost.OreCost;
+                            robotStates.Add(newState);
+                            newState.EndMinute();
+                        }
+
+                        if (blueprint.CanBuyObsidianRobot(robotState) && (currentMinute < firstGeodeTurn + numMinutes / 4 || firstGeodeTurn == 0))
+                        {
+                            var newState = robotState.Copy();
+                            newState.Buy("obsidian");
+                            newState.OreCount -= blueprint.ObsidianRobotCost.OreCost;
+                            newState.ClayCount -= blueprint.ObsidianRobotCost.ClayCost;
+                            robotStates.Add(newState);
+                            newState.EndMinute();
+
+                            if (firstObsidianTurn == 0)
                             {
-                                case "ore":
-                                    if (blueprint.CanBuyOreRobot(robotState))
-                                    {
-                                        robotState.Buy("ore");
-                                        robotState.OreCount -= blueprint.OreRobotCost.OreCost;
-                                        bought = true;
-                                    }
-                                    break;
-
-                                case "clay":
-                                    if (blueprint.CanBuyClayRobot(robotState))
-                                    {
-                                        robotState.Buy("clay");
-                                        robotState.OreCount -= blueprint.ClayRobotCost.OreCost;
-                                        bought = true;
-                                    }
-                                    break;
-
-                                case "obsidian":
-                                    if (blueprint.CanBuyObsidianRobot(robotState))
-                                    {
-                                        robotState.Buy("obsidian");
-                                        robotState.OreCount -= blueprint.ObsidianRobotCost.OreCost;
-                                        robotState.ClayCount -= blueprint.ObsidianRobotCost.ClayCost;
-                                        bought = true;
-                                    }
-                                    break;
-
-                                case "geode":
-                                    if (blueprint.CanBuyGeodeRobot(robotState))
-                                    {
-                                        robotState.Buy("geode");
-                                        robotState.OreCount -= blueprint.GeodeRobotCost.OreCost;
-                                        robotState.ObsidianCount -= blueprint.GeodeRobotCost.ObsidianCost;
-                                        bought = true;
-                                    }
-                                    break;
+                                firstObsidianTurn = currentMinute;
                             }
                         }
 
-                        if (!bought)
+                        if (blueprint.CanBuyGeodeRobot(robotState))
                         {
-                            break;
+                            var newState = robotState.Copy();
+                            newState.Buy("geode");
+                            newState.OreCount -= blueprint.GeodeRobotCost.OreCost;
+                            newState.ObsidianCount -= blueprint.GeodeRobotCost.ObsidianCost;
+                            robotStates.Add(newState);
+                            newState.EndMinute();
+
+                            if (firstGeodeTurn == 0)
+                            {
+                                firstGeodeTurn = currentMinute;
+                            }
                         }
                     }
 
                     robotState.EndMinute();
                 }
 
-                maxGeodes = Math.Max(maxGeodes, robotState.GeodeCount);
+                if (currentMinute == numMinutes/2 && robotStates.Any(x => x.ClayCount > 0))
+                {
+                    robotStates = robotStates.Where(x => x.ClayRobotCount > 0).ToList();
+                }
+
+                if (currentMinute == firstGeodeTurn + numMinutes / 5 && robotStates.Any(x => x.GeodeCount > 0))
+                {
+                    robotStates = robotStates.Where(x => x.GeodeRobotCount > 0).ToList();
+                }
+
+                if (robotStates.All(x => x.GeodeCount > 0))
+                {
+                    var maxGeodeCount = robotStates.Max(x => x.GeodeCount);
+                    var maxGeodeRobotcount = robotStates.Max(x => x.GeodeRobotCount);
+
+                    robotStates = robotStates.Where(x => x.GeodeCount >= maxGeodeCount - 1 || x.GeodeRobotCount >= maxGeodeRobotcount - 1).ToList();
+                }
+
+                if (robotStates.Count > 1000000)
+                {
+                    robotStates = robotStates.OrderByDescending(x => x.Score).Take(1000000).ToList();
+                }
             }
 
-            Console.WriteLine($"Day 19 part 1: {maxGeodes}");
-            Console.WriteLine($"Day 19 part 2: ");
+            return robotStates;
         }
 
         private static void RunDay18()

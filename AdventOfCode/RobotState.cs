@@ -25,6 +25,13 @@ namespace AdventOfCode
         public int ObsidianCount { get; set; }
         public int ClayCount { get; set; }
         public int GeodeCount { get; set; }
+        public int Score => GetScore();
+
+        private int GetScore()
+        {
+            return OreRobotCount * Math.Max(ClayRobotCount * 2, 1) * Math.Max(ObsidianRobotCount * 4, 1) * Math.Max(GeodeRobotCount * 8, 1)
+                + OreCount + ClayCount * 2 + ObsidianCount * 4 + GeodeCount * 8;
+        }
 
         public void Buy(string robotType)
         {
@@ -48,6 +55,24 @@ namespace AdventOfCode
             toBuy["clay"] = 0;
             toBuy["obsidian"] = 0;
             toBuy["geode"] = 0;
+        }
+
+        public RobotState Copy()
+        {
+            var newState = new RobotState();
+            newState.ClayCount = ClayCount;
+            newState.OreCount = OreCount;
+            newState.ObsidianCount= ObsidianCount;
+            newState.GeodeCount = GeodeCount;
+
+            newState.ClayRobotCount = ClayRobotCount;
+            newState.OreRobotCount = OreRobotCount;
+            newState.ObsidianRobotCount = ObsidianRobotCount;
+            newState.GeodeRobotCount = GeodeRobotCount;
+
+            newState.CurrentMinute = CurrentMinute;            
+
+            return newState;
         }
     }
 }
