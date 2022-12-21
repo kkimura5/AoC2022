@@ -60,6 +60,7 @@
     <Compile Include="Path.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RiddleMonkey.cs" />
     <Compile Include="RobotCost.cs" />
     <Compile Include="RobotState.cs" />
     <Compile Include="Rock.cs" />

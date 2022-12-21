@@ -37,7 +37,45 @@ namespace AdventOfCode
             RunDay18();
             //RunDay19();
             //RunDay20();
+            RunDay21();
             Console.ReadKey();
+        }
+
+        private static void RunDay21()
+        {
+            var lines = File.ReadAllLines(".\\Input\\Day21.txt").ToList();
+
+            var monkeys = lines.Select(x => new RiddleMonkey(x)).ToList();
+
+            foreach (var monkey in monkeys)
+            {
+                monkey.OtherMonkeys = monkey.OtherMonkeyNames.Select(name => monkeys.Single(m => m.Name == name)).ToList();
+            }
+
+            var root = monkeys.Single(x => x.Name == "root");
+            Console.WriteLine($"Day 21 part 1: {root.Value}");
+
+            var op1 = root.OtherMonkeys[0];
+            var op2 = root.OtherMonkeys[1];
+            var humn = monkeys.Single(x => x.Name == "humn");
+            var curr = humn.Value;
+            long i = 0;
+            var iterationsize = 100000000000;
+            while (op1.Value != op2.Value)
+            {
+                while (op1.Value >= op2.Value)
+                {
+                    i += iterationsize;
+                    humn.ImmediateValue = i;
+                }
+
+                Console.WriteLine($"{i} : {op1.Value} {op2.Value}");
+                i -= iterationsize;
+                humn.ImmediateValue = i;
+                iterationsize /= 10;
+            }
+
+            Console.WriteLine($"Day 21 part 2: {humn.ImmediateValue}");
         }
 
         private static void RunDay20()
