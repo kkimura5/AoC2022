@@ -46,9 +46,11 @@
   <ItemGroup>
     <Compile Include="Blueprint.cs" />
     <Compile Include="Cube.cs" />
+    <Compile Include="CubeMap.cs" />
     <Compile Include="DecryptionVal.cs" />
     <Compile Include="DoublePath.cs" />
     <Compile Include="Folder.cs" />
+    <Compile Include="Heading.cs" />
     <Compile Include="Helpers.cs" />
     <Compile Include="CubeEqualityComparer.cs" />
     <Compile Include="Knot.cs" />

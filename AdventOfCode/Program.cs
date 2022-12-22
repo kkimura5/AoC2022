@@ -27,7 +27,7 @@ namespace AdventOfCode
             //RunDay8();
             //RunDay9();
             //RunDay10();
-            ////RunDay11();
+            //RunDay11();
             //RunDay12();
             //RunDay13();
             //RunDay14();
@@ -37,8 +37,155 @@ namespace AdventOfCode
             //RunDay18();
             //RunDay19();
             //RunDay20();
-            RunDay21();
+            //RunDay21();
+            RunDay22();
             Console.ReadKey();
+        }
+
+        private static void RunDay22()
+        {
+            var lines = File.ReadAllLines(".\\Input\\Day22.txt").ToList();
+            var map = lines.Take(lines.Count - 2).ToList();
+            var directions = lines.Last();
+            var currentPosition1 = new Point(lines.First().IndexOf('.'), 0);
+            var currentPosition2 = new Point(lines.First().IndexOf('.'), 0);
+
+            var heading = Heading.Right;
+            while (!string.IsNullOrEmpty(directions))
+            {
+                var pattern1 = "^[LR]";
+                var pattern2 = @"^\d+";
+                var dirMatch = Regex.Match(directions, pattern1);
+                var moveMatch = Regex.Match(directions, pattern2);
+
+                if (dirMatch.Success)
+                {
+                    directions = directions.Substring(1);
+                    var headings = new List<Heading> { Heading.Right, Heading.Down, Heading.Left, Heading.Up };
+                    var currentIndex = headings.IndexOf(heading);
+                    switch (dirMatch.Value)
+                    {
+                        case "L":
+                            currentIndex--;
+                            if (currentIndex < 0)
+                            {
+                                currentIndex = 3;
+                            }
+                            break;
+
+                        case "R":
+                            currentIndex++;
+                            currentIndex %= 4;
+                            break;
+                    }
+
+                    heading = headings[currentIndex];
+                }
+                else if (moveMatch.Success)
+                {
+                    directions = directions.Substring(moveMatch.Value.Length);
+
+                    var numSpacesToMove = int.Parse(moveMatch.Value);
+                    string relevantLine = string.Empty;
+                    int index = 0;
+                    switch (heading)
+                    {
+                        case Heading.Right:
+                        case Heading.Left:
+                            relevantLine = map[currentPosition1.Y];
+                            index = currentPosition1.X;
+                            break;
+
+                        case Heading.Down:
+                        case Heading.Up:
+                            relevantLine = string.Join(string.Empty, map.Select(row => row.Length > currentPosition1.X ? row[currentPosition1.X] : ' '));
+                            index = currentPosition1.Y;
+                            break;
+                    }
+
+                    var newPosition = Move(heading, numSpacesToMove, index, relevantLine);
+                    if (heading == Heading.Down || heading == Heading.Up)
+                    {
+                        currentPosition1 = new Point(currentPosition1.X, newPosition);
+                    }
+                    else
+                    {
+                        currentPosition1 = new Point(newPosition, currentPosition1.Y);
+                    }
+
+                    if (map[currentPosition1.Y][currentPosition1.X] != '.')
+                    {
+                        throw new Exception();
+                    }
+                }
+            }
+
+            var total = (currentPosition1.X + 1) * 4 + (currentPosition1.Y + 1) * 1000 + Math.Abs((int)heading) - 1;
+            Console.WriteLine($"Day 22 part 1: {total}");
+
+
+        }
+
+        private static int Move(Heading heading, int numSpacesToMove, int index, string relevantLine)
+        {
+            string nextChars;
+            string otherEnd;
+            if (heading < 0)
+            {
+                nextChars = string.Join(string.Empty, relevantLine.Substring(0, index + 1).Reverse());
+                otherEnd = string.Join(string.Empty, relevantLine.Reverse());
+            }
+            else
+            {
+                nextChars = relevantLine.Substring(index);
+                otherEnd = relevantLine;
+            }
+
+            var spaces = nextChars.Skip(1).Take(Math.Min(numSpacesToMove, nextChars.Count() - 1)).ToList();
+            if (spaces.Any(x => x == '#'))
+            {
+                return index + Math.Sign((int)heading) * spaces.IndexOf('#');
+            }
+            else if (spaces.All(x => x == '.') && spaces.Count == numSpacesToMove)
+            {
+                return index + Math.Sign((int)heading) * numSpacesToMove;
+            }
+            else
+            {
+                int spacesToEnd;
+                if (spaces.Any(x => x == ' '))
+                {
+                    spacesToEnd = spaces.IndexOf(' ');
+                }
+                else
+                {
+                    spacesToEnd = spaces.Count;
+                }
+
+                var remainingSpacesToMove = numSpacesToMove - spacesToEnd;
+
+                var firstSpace = otherEnd.IndexOf('.');
+                var firstWall = otherEnd.IndexOf('#');
+                if (firstWall < firstSpace)
+                {
+                    return index + Math.Sign((int)heading) * spacesToEnd;
+                }
+                else if (remainingSpacesToMove == 1)
+                {
+                    return otherEnd != relevantLine ? relevantLine.Length - firstSpace - 1 : firstSpace;
+                }                
+                else
+                {
+                    if (otherEnd != relevantLine)
+                    {
+                        return Move(heading, remainingSpacesToMove - 1, relevantLine.Length - firstSpace - 1, relevantLine);
+                    }
+                    else
+                    {
+                        return Move(heading, remainingSpacesToMove - 1, firstSpace, relevantLine);
+                    }
+                }
+            }
         }
 
         private static void RunDay21()
