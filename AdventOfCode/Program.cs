@@ -46,11 +46,15 @@ namespace AdventOfCode
         {
             var lines = File.ReadAllLines(".\\Input\\Day22.txt").ToList();
             var map = lines.Take(lines.Count - 2).ToList();
+            int sideLength = 50;
+            //int sideLength = 4;
+            var cubeMap = new CubeMap(map, sideLength);
             var directions = lines.Last();
             var currentPosition1 = new Point(lines.First().IndexOf('.'), 0);
-            var currentPosition2 = new Point(lines.First().IndexOf('.'), 0);
+            var currentPosition2 = new CubeLocation(new Point(0, 0), SideName.Top, Heading.Right);
 
             var heading = Heading.Right;
+            var numMoves = 0;
             while (!string.IsNullOrEmpty(directions))
             {
                 var pattern1 = "^[LR]";
@@ -60,26 +64,9 @@ namespace AdventOfCode
 
                 if (dirMatch.Success)
                 {
+                    heading = GetNewHeading(heading, dirMatch.Value);
+                    currentPosition2.HeadingOnSide = GetNewHeading(currentPosition2.HeadingOnSide, dirMatch.Value);
                     directions = directions.Substring(1);
-                    var headings = new List<Heading> { Heading.Right, Heading.Down, Heading.Left, Heading.Up };
-                    var currentIndex = headings.IndexOf(heading);
-                    switch (dirMatch.Value)
-                    {
-                        case "L":
-                            currentIndex--;
-                            if (currentIndex < 0)
-                            {
-                                currentIndex = 3;
-                            }
-                            break;
-
-                        case "R":
-                            currentIndex++;
-                            currentIndex %= 4;
-                            break;
-                    }
-
-                    heading = headings[currentIndex];
                 }
                 else if (moveMatch.Success)
                 {
@@ -117,13 +104,129 @@ namespace AdventOfCode
                     {
                         throw new Exception();
                     }
+
+                    var cubeSide = cubeMap.Sides.Single(x => x.SideName == currentPosition2.SideName);                    
+                    currentPosition2 = MoveCubeSide(currentPosition2, numSpacesToMove, cubeMap);
+                    numMoves++;
                 }
             }
 
+            var cubePosition = currentPosition2.Location;
+            var finalCubeSide = cubeMap.Sides.Single(X => X.SideName == currentPosition2.SideName);
+            var finalHeading = currentPosition2.HeadingOnSide;
+            if (finalCubeSide.Rotation == 90)
+            {
+                cubePosition = new Point(cubePosition.Y, sideLength - cubePosition.X);
+                finalHeading = GetNewHeading(finalHeading, "L");
+            }
+            else if (finalCubeSide.Rotation == -90)
+            {
+                cubePosition = new Point(sideLength - cubePosition.Y, cubePosition.X);
+                finalHeading = GetNewHeading(finalHeading, "R");
+            }
+
+            cubePosition.Offset(finalCubeSide.CornerPoint.X, finalCubeSide.CornerPoint.Y);
+
             var total = (currentPosition1.X + 1) * 4 + (currentPosition1.Y + 1) * 1000 + Math.Abs((int)heading) - 1;
+            var total2 = (cubePosition.X + 1) * 4 + (cubePosition.Y + 1) * 1000 + Math.Abs((int)finalHeading) - 1;
             Console.WriteLine($"Day 22 part 1: {total}");
+            Console.WriteLine($"Day 22 part 2: {total2}");
+        }
 
+        private static CubeLocation MoveCubeSide(CubeLocation currentLocation, int numSpacesToMove, CubeMap cubeMap)
+        {
+            var currentCubeSide = cubeMap.Sides.Single(x => x.SideName == currentLocation.SideName);
+            var currentPosition = currentLocation.Location;
+            var heading = currentLocation.HeadingOnSide;
+            var map = currentCubeSide.Lines;
+            string relevantLine = string.Empty;
+            int index = 0;
 
+            Action<int> offsetAction = null;
+            switch (heading)
+            {
+                case Heading.Right:
+                case Heading.Left:
+                    relevantLine = map[currentPosition.Y];
+                    index = currentPosition.X;
+                    offsetAction = dx => currentPosition = new Point(currentPosition.X + dx, currentPosition.Y);
+                    break;
+
+                case Heading.Down:
+                case Heading.Up:
+                    relevantLine = string.Join(string.Empty, map.Select(row => row.Length > currentPosition.X ? row[currentPosition.X] : ' '));
+                    index = currentPosition.Y;
+                    offsetAction = dy => currentPosition = new Point(currentPosition.X , currentPosition.Y + dy);
+                    break;
+            }
+
+            string nextChars;
+            if (heading < 0)
+            {
+                nextChars = string.Join(string.Empty, relevantLine.Substring(0, index + 1).Reverse());
+            }
+            else
+            {
+                nextChars = relevantLine.Substring(index);
+            }
+
+            var spaces = nextChars.Skip(1).Take(Math.Min(numSpacesToMove, nextChars.Count() - 1)).ToList();
+            if (spaces.Any(x => x == '#'))
+            {
+                offsetAction.Invoke(Math.Sign((int)heading) * spaces.IndexOf('#'));
+                return new CubeLocation(currentPosition, currentLocation.SideName, currentLocation.HeadingOnSide);
+            }
+            else if (spaces.All(x => x == '.') && spaces.Count == numSpacesToMove)
+            {
+                offsetAction.Invoke(Math.Sign((int)heading) * numSpacesToMove);
+                return new CubeLocation(currentPosition, currentLocation.SideName, currentLocation.HeadingOnSide);
+            }
+            else
+            {
+                int spacesToEnd = spaces.Count;
+                var remainingSpacesToMove = numSpacesToMove - spacesToEnd;
+                offsetAction.Invoke(Math.Sign((int)heading) * spacesToEnd);
+                var nextCubeSide = cubeMap.GetNextCubeSide(currentCubeSide.SideName, heading);
+                var nextPoint = cubeMap.GetNextPoint(currentCubeSide.SideName, currentPosition, heading);
+                var nextHeading = cubeMap.GetNextHeading(currentCubeSide.SideName, heading);
+
+                if (nextCubeSide.Lines[nextPoint.Y][nextPoint.X] == '#')
+                {
+                    return new CubeLocation(currentPosition, currentLocation.SideName, currentLocation.HeadingOnSide);
+                }
+                else if (remainingSpacesToMove == 1)
+                {                    
+                    return new CubeLocation(nextPoint, nextCubeSide.SideName, nextHeading);
+                }
+                else
+                {
+                    var newLocation = new CubeLocation(nextPoint, nextCubeSide.SideName, nextHeading);
+                    return MoveCubeSide(newLocation, remainingSpacesToMove - 1, cubeMap);
+                }
+            }
+        }
+
+        private static Heading GetNewHeading(Heading heading, string dirMatchValue)
+        {
+            var headings = new List<Heading> { Heading.Right, Heading.Down, Heading.Left, Heading.Up };
+            var currentIndex = headings.IndexOf(heading);
+            switch (dirMatchValue)
+            {
+                case "L":
+                    currentIndex--;
+                    if (currentIndex < 0)
+                    {
+                        currentIndex = 3;
+                    }
+                    break;
+
+                case "R":
+                    currentIndex++;
+                    currentIndex %= 4;
+                    break;
+            }
+
+            return headings[currentIndex];
         }
 
         private static int Move(Heading heading, int numSpacesToMove, int index, string relevantLine)

@@ -46,7 +46,9 @@
   <ItemGroup>
     <Compile Include="Blueprint.cs" />
     <Compile Include="Cube.cs" />
+    <Compile Include="CubeLocation.cs" />
     <Compile Include="CubeMap.cs" />
+    <Compile Include="CubeSide.cs" />
     <Compile Include="DecryptionVal.cs" />
     <Compile Include="DoublePath.cs" />
     <Compile Include="Folder.cs" />
@@ -69,6 +71,7 @@
     <Compile Include="RockRow.cs" />
     <Compile Include="SandCastle.cs" />
     <Compile Include="Sensor.cs" />
+    <Compile Include="SideName.cs" />
     <Compile Include="Tower.cs" />
     <Compile Include="TowerRow.cs" />
     <Compile Include="Valve.cs" />
