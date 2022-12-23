@@ -50,6 +50,7 @@
     <Compile Include="CubeMap.cs" />
     <Compile Include="CubeSide.cs" />
     <Compile Include="DecryptionVal.cs" />
+    <Compile Include="Direction.cs" />
     <Compile Include="DoublePath.cs" />
     <Compile Include="Folder.cs" />
     <Compile Include="Heading.cs" />

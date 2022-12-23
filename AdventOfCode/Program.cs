@@ -39,7 +39,202 @@ namespace AdventOfCode
             //RunDay20();
             //RunDay21();
             RunDay22();
+            RunDay23();
             Console.ReadKey();
+        }
+
+        private static void RunDay23()
+        {
+            var lines = File.ReadAllLines(".\\Input\\Day23.txt").ToList();
+            var numRounds = 1000;
+
+            var mapSize = lines.Count + 2 * numRounds;
+            var map = new bool[mapSize, mapSize];
+            var minX = mapSize;
+            var maxX = 0;
+            var minY = mapSize;
+            var maxY = 0;
+
+            for (int y = numRounds; y < lines.Count + numRounds; y++)
+            {
+                var line = lines[y - numRounds];
+                for (int x = numRounds; x < line.Length + numRounds; x++)
+                {
+                    map[x, y] = line[x - numRounds] == '#';
+                    if (map[x, y])
+                    {
+                        minX = Math.Min(minX, x);
+                        minY = Math.Min(minY, y);
+                        maxX = Math.Max(maxX, x);
+                        maxY = Math.Max(maxY, y);
+                    }
+                }
+            }
+
+            var directions = new List<Direction>
+            {
+                Direction.North,
+                Direction.South,
+                Direction.West,
+                Direction.East,
+            };
+
+            int round = 0;
+            while (true)
+            {
+                var proposedNewPoints = new Dictionary<Point, Point>();
+                var blockedPoints = new List<Point>();
+                for (int y = minY; y <= maxY; y++)
+                {
+                    for (int x = minX; x <= maxX; x++)
+                    {
+                        if (map[x, y])
+                        {
+                            if (WillMove(map, x, y))
+                            {
+                                Point point = GetProposedPoint(map, x, y, directions, round);
+                                if (proposedNewPoints.Values.Any(p => p == point))
+                                {
+                                    proposedNewPoints.Remove(proposedNewPoints.Single(kvp => kvp.Value == point).Key);
+                                    blockedPoints.Add(point);
+                                }
+
+                                if (point != new Point(-1, -1) && !blockedPoints.Contains(point))
+                                {
+                                    proposedNewPoints.Add(new Point(x, y), point);
+                                }
+                            }
+
+                        }
+                    }
+                }
+                
+                foreach (var newPoint in proposedNewPoints)
+                {
+                    map[newPoint.Key.X, newPoint.Key.Y] = false;
+                    map[newPoint.Value.X, newPoint.Value.Y] = true;
+                    minX = Math.Min(minX, newPoint.Value.X);
+                    minY = Math.Min(minY, newPoint.Value.Y);
+                    maxX = Math.Max(maxX, newPoint.Value.X);
+                    maxY = Math.Max(maxY, newPoint.Value.Y);
+                }
+
+                round++;
+                if (round == 10)
+                {
+                    int count = GetCount(mapSize, map);
+                    Console.WriteLine($"Day 23 Part 1: {count}");
+                }
+
+                if (!proposedNewPoints.Any())
+                {
+                    break;
+                }
+
+                Console.WriteLine($"Round {round + 1}, {proposedNewPoints.Count} moved.");
+            }
+
+            Console.WriteLine($"Day 23 Part 2: {round}");
+        }
+
+        private static int GetCount(int mapSize, bool[,] map)
+        {
+            var minX = mapSize;
+            var maxX = 0;
+            var minY = mapSize;
+            var maxY = 0;
+
+            for (int y = 0; y < mapSize; y++)
+            {
+                for (int x = 0; x < mapSize; x++)
+                {
+                    if (map[x, y])
+                    {
+                        minX = Math.Min(minX, x);
+                        minY = Math.Min(minY, y);
+                        maxX = Math.Max(maxX, x);
+                        maxY = Math.Max(maxY, y);
+                    }
+                }
+            }
+
+            var count = 0;
+            for (int y = minY; y <= maxY; y++)
+            {
+                for (int x = minX; x <= maxX; x++)
+                {
+                    if (!map[x, y])
+                    {
+                        count++;
+                    }
+                }
+            }
+
+            return count;
+        }
+
+        private static Point GetProposedPoint(bool[,] map, int x, int y, List<Direction> directions, int round)
+        {
+            for (int i = 0; i < directions.Count; i++)
+            {
+                var proposedDirection = directions[(i + round) % 4];
+
+                switch(proposedDirection)
+                {
+                    case Direction.North:
+                        if (!map[x - 1, y - 1] && !map[x, y - 1] && !map[x + 1, y - 1])
+                        {
+                            return new Point(x, y - 1);
+                        }
+                        break;
+
+                    case Direction.South:
+                        if (!map[x - 1, y + 1] && !map[x, y + 1] && !map[x + 1, y + 1])
+                        {
+                            return new Point(x, y + 1);
+                        }
+                        break;
+
+                    case Direction.East:
+                        if (!map[x + 1, y - 1] && !map[x + 1, y ] && !map[x + 1, y + 1])
+                        {
+                            return new Point(x + 1, y);
+                        }
+                        break;
+
+                    case Direction.West:
+                        if (!map[x - 1, y -1 ] && !map[x - 1, y] && !map[x - 1, y + 1])
+                        {
+                            return new Point(x - 1, y);
+                        }
+                        break;
+
+                }
+
+            }
+
+            return new Point(-1, -1);
+        }
+
+        private static bool WillMove(bool[,] map, int x, int y)
+        {
+            for (int i = x - 1; i <= x + 1; i++)
+            {
+                for (int j = y - 1; j <= y + 1; j++)
+                {
+                    if (i == x && j == y)
+                    {
+                        continue;
+                    }
+
+                    if (map[i, j])
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
         }
 
         private static void RunDay22()
