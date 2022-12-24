@@ -38,9 +38,210 @@ namespace AdventOfCode
             //RunDay19();
             //RunDay20();
             //RunDay21();
-            RunDay22();
-            RunDay23();
+            //RunDay22();
+            //RunDay23();
+            RunDay24();
             Console.ReadKey();
+        }
+
+        private static void RunDay24()
+        {
+            var map = File.ReadAllLines(".\\Input\\Day24.txt").ToList();
+
+            var blizzardMap = InitializeBlizzardMap(map);
+            var startingPosition = new Point(1, 0);
+            var endPosition = new Point(map.Last().IndexOf('.'), map.Count - 1);
+            var total = GetMinTotalMoves(map, startingPosition, endPosition, ref blizzardMap);
+            Console.WriteLine($"Day 24 part 1: {total}");
+
+            total += GetMinTotalMoves(map, endPosition, startingPosition, ref blizzardMap);
+            total += GetMinTotalMoves(map, startingPosition, endPosition, ref blizzardMap);
+            Console.WriteLine($"Day 24 part 2: {total}");
+        }
+
+        private static int GetMinTotalMoves(List<string> map, Point startingPosition, Point endPosition, ref List<Heading>[,] blizzardMap)
+        {
+            var paths = new List<List<Point>> { new List<Point>() { startingPosition } };
+            while (!paths.Any(x => x.Last() == endPosition))
+            {
+                //PrintMap(blizzardMap, map.First().Length, map.Count);
+                var nextMap = IterateBlizzards(blizzardMap, map.First().Length, map.Count);
+                var nextPaths = new List<List<Point>>();
+                foreach (var path in paths.ToList())
+                {
+                    var currentPosition = path.Last();
+                    var possibleNextMoves = new List<Point>()
+                    {
+                        new Point(currentPosition.X, currentPosition.Y),
+                        new Point(currentPosition.X, currentPosition.Y+1),
+                        new Point(currentPosition.X, currentPosition.Y-1),
+                        new Point(currentPosition.X+1, currentPosition.Y),
+                        new Point(currentPosition.X-1, currentPosition.Y),
+                    };
+
+                    var newPaths = possibleNextMoves.Where(x => IsInBounds(x, map))
+                        .Where(x => x == startingPosition || x == endPosition || (nextMap[x.X, x.Y] != null && !nextMap[x.X, x.Y].Any()))
+                        .Select(x => path.Concat(new List<Point>() { x }).ToList()).ToList();
+
+                    nextPaths.AddRange(newPaths.Where(x => !nextPaths.Any(y => y.Last() == x.Last())));
+                }
+
+                blizzardMap = nextMap;
+                paths = nextPaths;
+            }
+
+            return paths.Where(x => x.Last() == endPosition).Min(x => x.Count) - 1;
+        }
+
+        private static void PrintMap(List<Heading>[,] blizzardMap, int totalX, int totalY)
+        {
+            for (int y = 0; y < totalY ; y++)
+            {
+                for (int x = 0; x < totalX ; x++)
+                {
+                    if (y == 0 || x == 0 || x == totalX - 1 || y == totalY - 1)
+                    {
+                        Console.Write('#');
+                    }
+                    else if (!blizzardMap[x, y].Any())
+                    {
+                        Console.Write('.');
+                    }
+                    else if (blizzardMap[x, y].Count > 1)
+                    {
+                        Console.Write($"{blizzardMap[x, y].Count}".First());
+                    }
+                    else
+                    {
+                        switch(blizzardMap[x, y].Single())
+                        {
+                            case Heading.Down:
+                                Console.Write('v');
+                                break;
+                            case Heading.Up:
+                                Console.Write('^');
+                                break;
+                            case Heading.Left:
+                                Console.Write('<');
+                                break;
+                            case Heading.Right:
+                                Console.Write('>');
+                                break;
+                        }
+                    }
+                }
+
+                Console.WriteLine();
+            }
+        }
+
+        private static bool IsInBounds(Point point, List<string> map)
+        {
+            var isInXBounds = point.X > 0 && point.X < map.First().Length - 1; 
+            var isInYBounds = point.Y > 0 && point.Y < map.Count - 1;
+            var isAtStartPosition = point == new Point(map.First().IndexOf('.'), 0);
+            var isAtEndPosition = point == new Point(map.Last().IndexOf('.'), map.Count - 1);
+
+            return (isInXBounds && isInYBounds) || isAtEndPosition || isAtStartPosition;
+        }
+
+        private static List<Heading>[,] IterateBlizzards(List<Heading>[,] blizzardMap, int totalX, int totalY)
+        {
+            var newMap = new List<Heading>[totalX, totalY];
+            for (int y = 1; y < totalY - 1; y++)
+            {
+                for (int x = 1; x < totalX - 1; x++)
+                {
+                    if (newMap[x, y] is null)
+                    {
+                        newMap[x, y] = new List<Heading>();
+                    }
+
+                    foreach(var blizzard in blizzardMap[x, y])
+                    {
+                        Point newPoint = new Point();
+                        switch (blizzard)
+                        {
+                            case Heading.Right:
+                                newPoint = new Point(x + 1, y);
+                                if (newPoint.X > totalX - 2)
+                                {
+                                    newPoint = new Point(1, y);
+                                }
+                                break;
+
+                            case Heading.Left:
+                                newPoint = new Point(x - 1, y);
+                                if (newPoint.X < 1)
+                                {
+                                    newPoint = new Point(totalX - 2, y);
+                                }
+                                break;
+
+                            case Heading.Down:
+                                newPoint = new Point(x, y + 1);
+                                if (newPoint.Y > totalY - 2)
+                                {
+                                    newPoint = new Point(x, 1);
+                                }
+                                break;
+
+                            case Heading.Up:
+                                newPoint = new Point(x, y - 1);
+                                if (newPoint.Y < 1)
+                                {
+                                    newPoint = new Point(x, totalY - 2);
+                                }
+                                break;
+                        }
+
+                        if (newMap[newPoint.X, newPoint.Y] is null)
+                        {
+                            newMap[newPoint.X, newPoint.Y] = new List<Heading>();
+                        }
+
+                        newMap[newPoint.X, newPoint.Y].Add(blizzard);
+                    }
+                }
+            }
+
+            return newMap;
+        }
+
+        private static List<Heading>[,] InitializeBlizzardMap(List<string> map)
+        {
+            var blizzardMap = new List<Heading>[map.First().Length, map.Count];
+
+            for (int y = 0; y < map.Count; y++)
+            {
+                for (int x = 0; x < map.First().Length; x++)
+                {
+                    if (map[y][x] == '#')
+                    {
+                        continue;
+                    }
+
+                    blizzardMap[x, y] = new List<Heading>();
+                    switch (map[y][x])
+                    {
+                        case '>':
+                            blizzardMap[x, y].Add(Heading.Right);
+                            break;
+                        case '<':
+                            blizzardMap[x, y].Add(Heading.Left);
+                            break;
+
+                        case 'v':
+                            blizzardMap[x, y].Add(Heading.Down);
+                            break;
+                        case '^':
+                            blizzardMap[x, y].Add(Heading.Up);
+                            break;
+                    }
+                }
+            }
+
+            return blizzardMap;
         }
 
         private static void RunDay23()
