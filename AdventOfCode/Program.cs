@@ -40,8 +40,102 @@ namespace AdventOfCode
             //RunDay21();
             //RunDay22();
             //RunDay23();
-            RunDay24();
+            //RunDay24();
+            RunDay25();
             Console.ReadKey();
+        }
+
+        private static void RunDay25()
+        {
+            var lines = File.ReadAllLines(".\\Input\\Day25.txt").ToList();
+            long total = 0;
+            foreach (var line in lines)
+            {
+                total += SnafuToDecimal(line);
+            }
+
+            Console.WriteLine($"Day 25 Part 1: {DecimalToSnafu(total).Substring(1)}");
+        }
+
+        private static long SnafuToDecimal(string snafu)
+        {
+            long total = 0;
+            var reverse = snafu.Reverse().ToList();
+            for (int i = 0; i < snafu.Length; i++)
+            {
+                var character = reverse[i];
+                if (character == '=')
+                {
+                    total += (long)Math.Pow(5, i) * -2;
+                }
+                else if (character == '-')
+                {
+                    total += (long)Math.Pow(5, i) * -1;
+                }
+                else
+                {
+                    total += (long)Math.Pow(5, i) * int.Parse(character.ToString());
+                }
+            }
+
+            return total;
+        }
+
+        private static string DecimalToSnafu(long number)
+        {
+            var characters = new List<char>() { '0' };
+            var power = 0;
+            while (Math.Pow(5, power + 1) < number)
+            {
+                power++;
+            }
+
+            while (power >= 0)
+            {
+                characters.Add('0');
+                var currentDigit = characters.Count - 1;
+
+                var newDigit = (long)(number / Math.Pow(5, power));
+                if (newDigit <= 2)
+                {
+                    characters[currentDigit] = newDigit.ToString().Single();
+                }
+                else 
+                {
+                    IncrementDigit(characters, currentDigit - 1);
+                    characters[currentDigit] = newDigit == 3 ? '=' : '-';
+                }
+
+                number %= (long)Math.Pow(5, power);
+                power--;
+            }
+
+
+            return string.Join(string.Empty, characters);
+        }
+
+        private static void IncrementDigit(List<char> characters, int digit)
+        {
+            switch (characters[digit])
+            {
+                case '0':
+                case '1':
+                    characters[digit]++;
+                    break;
+
+                case '=':
+                    characters[digit] = '-';
+                    break;
+
+                case '-':
+                    characters[digit] = '0';
+                    break;
+
+                case '2':
+                    characters[digit] = '=';
+                    IncrementDigit(characters, digit - 1);
+                    break;
+            }
         }
 
         private static void RunDay24()
